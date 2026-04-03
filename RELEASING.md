@@ -64,6 +64,8 @@ To activate tokenless publishing on PyPI:
 
 Once this is configured on PyPI, no long-lived PyPI API token is needed in GitHub secrets.
 
+If you want to publish an already existing tag such as `v0.1.0`, you can also run the `Publish to PyPI` workflow manually from GitHub Actions and set `ref` to that tag.
+
 ## Tagging example
 
 ```bash

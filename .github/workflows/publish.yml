@@ -4,15 +4,21 @@ on:
   release:
     types:
       - published
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to build and publish, for example main or v0.1.0
+        required: true
+        default: main
 
 concurrency:
-  group: pypi-publish-${{ github.event.release.tag_name }}
+  group: pypi-publish-${{ github.event.release.tag_name || github.event.inputs.ref || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
   build-distributions:
     name: Build distributions
-    if: github.event.release.prerelease == false
+    if: github.event_name != 'release' || github.event.release.prerelease == false
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -20,6 +26,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -46,7 +54,7 @@ jobs:
 
   publish-to-pypi:
     name: Publish to PyPI
-    if: github.event.release.prerelease == false
+    if: github.event_name != 'release' || github.event.release.prerelease == false
     needs:
       - build-distributions
     runs-on: ubuntu-latest
