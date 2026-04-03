@@ -44,6 +44,26 @@ Recommended flow after `v0.1.0`:
 
 If you want CI to run on release PRs created by the workflow, add a `RELEASE_PLEASE_TOKEN` repository secret backed by a fine-scoped GitHub token. Without it, GitHub's default token can still open release PRs and create releases, but those PRs will not trigger other workflows.
 
+## PyPI trusted publishing setup
+
+The repository includes a dedicated PyPI publishing workflow at `.github/workflows/publish.yml`.
+
+To activate tokenless publishing on PyPI:
+
+1. Sign in to PyPI and open the publishing settings.
+2. If the `steplight` project does not exist yet, create a pending publisher for a new project.
+3. If the project already exists, add a trusted publisher to that project.
+4. Use these GitHub Actions settings:
+
+   - Owner: `riccardomerenda`
+   - Repository: `steplight`
+   - Workflow filename: `publish.yml`
+   - Environment name: `pypi`
+
+5. Publish a GitHub Release. The `Publish to PyPI` workflow will build the package, validate it with `twine check`, and upload it through PyPI Trusted Publishing.
+
+Once this is configured on PyPI, no long-lived PyPI API token is needed in GitHub secrets.
+
 ## Tagging example
 
 ```bash
