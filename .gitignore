@@ -1,0 +1,16 @@
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+pytest-cache-files-*/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+*.egg-info/
+dist/
+build/
+*.html
+htmlcov/
+tmp*/
+.claude/

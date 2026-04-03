@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ trace.name or trace.id }} — Steplight</title>
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --mono: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --transition: 0.2s ease;
+    }
+
+    /* ── Dark theme (default) ── */
+    [data-theme="dark"] {
+      --bg: #0e1117;
+      --surface: #161b22;
+      --surface-raised: #1c2129;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --text-dim: #6e7681;
+      --accent: #58a6ff;
+      --accent-dim: rgba(88, 166, 255, 0.15);
+
+      --clr-prompt: #d2a8ff;
+      --clr-prompt-bg: rgba(210, 168, 255, 0.12);
+      --clr-completion: #79c0ff;
+      --clr-completion-bg: rgba(121, 192, 255, 0.12);
+      --clr-tool: #7ee787;
+      --clr-tool-bg: rgba(126, 231, 135, 0.12);
+      --clr-error: #f85149;
+      --clr-error-bg: rgba(248, 81, 73, 0.12);
+      --clr-retry: #d29922;
+      --clr-retry-bg: rgba(210, 153, 34, 0.12);
+      --clr-chain: #8b949e;
+      --clr-chain-bg: rgba(139, 148, 158, 0.10);
+
+      --sev-error: #f85149;
+      --sev-error-bg: rgba(248, 81, 73, 0.15);
+      --sev-warning: #d29922;
+      --sev-warning-bg: rgba(210, 153, 34, 0.15);
+      --sev-info: #58a6ff;
+      --sev-info-bg: rgba(88, 166, 255, 0.12);
+
+      --bar-bg: #21262d;
+      --code-bg: #1c2129;
+    }
+
+    /* ── Light theme ── */
+    [data-theme="light"] {
+      --bg: #f6f8fa;
+      --surface: #ffffff;
+      --surface-raised: #f6f8fa;
+      --border: #d0d7de;
+      --text: #1f2328;
+      --text-muted: #656d76;
+      --text-dim: #8b949e;
+      --accent: #0969da;
+      --accent-dim: rgba(9, 105, 218, 0.10);
+
+      --clr-prompt: #8250df;
+      --clr-prompt-bg: rgba(130, 80, 223, 0.08);
+      --clr-completion: #0969da;
+      --clr-completion-bg: rgba(9, 105, 218, 0.08);
+      --clr-tool: #1a7f37;
+      --clr-tool-bg: rgba(26, 127, 55, 0.08);
+      --clr-error: #cf222e;
+      --clr-error-bg: rgba(207, 34, 46, 0.08);
+      --clr-retry: #9a6700;
+      --clr-retry-bg: rgba(154, 103, 0, 0.08);
+      --clr-chain: #656d76;
+      --clr-chain-bg: rgba(101, 109, 118, 0.06);
+
+      --sev-error: #cf222e;
+      --sev-error-bg: rgba(207, 34, 46, 0.10);
+      --sev-warning: #9a6700;
+      --sev-warning-bg: rgba(154, 103, 0, 0.10);
+      --sev-info: #0969da;
+      --sev-info-bg: rgba(9, 105, 218, 0.08);
+
+      --bar-bg: #e6e9ec;
+      --code-bg: #f6f8fa;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 2rem 1rem;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    main {
+      margin: 0 auto;
+      max-width: 960px;
+    }
+
+    /* ── Header ── */
+    .header {
+      align-items: flex-start;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .header .subtitle {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 0.25rem;
+    }
+    .theme-toggle {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      line-height: 1;
+      padding: 0.4rem 0.55rem;
+      transition: border-color var(--transition);
+    }
+    .theme-toggle:hover { border-color: var(--accent); color: var(--text); }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      padding: 1.25rem;
+    }
+    .card-title {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+    }
+
+    /* ── Metric grid ── */
+    .metrics {
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+    .metric {
+      background: var(--surface-raised);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem 1rem;
+    }
+    .metric .label {
+      color: var(--text-dim);
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.2rem;
+      text-transform: uppercase;
+    }
+    .metric .value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .metric .value small {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 400;
+    }
+
+    /* ── Status badge ── */
+    .status-badge {
+      border-radius: 100px;
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      padding: 0.2rem 0.6rem;
+      text-transform: uppercase;
+    }
+    .status-badge.success { background: var(--clr-tool-bg); color: var(--clr-tool); }
+    .status-badge.failed  { background: var(--clr-error-bg); color: var(--clr-error); }
+    .status-badge.unknown { background: var(--clr-chain-bg); color: var(--clr-chain); }
+
+    /* ── Diagnostics ── */
+    .diagnostics-list {
+      display: grid;
+      gap: 0.5rem;
+      list-style: none;
+    }
+    .diagnostic-item {
+      align-items: flex-start;
+      border-radius: var(--radius-sm);
+      display: flex;
+      gap: 0.6rem;
+      padding: 0.6rem 0.75rem;
+    }
+    .diagnostic-item.sev-error   { background: var(--sev-error-bg); }
+    .diagnostic-item.sev-warning { background: var(--sev-warning-bg); }
+    .diagnostic-item.sev-info    { background: var(--sev-info-bg); }
+    .sev-badge {
+      border-radius: 3px;
+      flex-shrink: 0;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.15rem 0.4rem;
+      text-transform: uppercase;
+    }
+    .sev-error   .sev-badge { background: var(--sev-error);   color: #fff; }
+    .sev-warning .sev-badge { background: var(--sev-warning);  color: #fff; }
+    .sev-info    .sev-badge { background: var(--sev-info);     color: #fff; }
+    .diagnostic-msg {
+      font-size: 0.85rem;
+      line-height: 1.45;
+    }
+    .diagnostic-rule {
+      color: var(--text-dim);
+      font-size: 0.75rem;
+    }
+    .diagnostics-empty {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* ── Waterfall chart ── */
+    .waterfall {
+      display: grid;
+      gap: 0.35rem;
+    }
+    .wf-row {
+      align-items: center;
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: 140px 1fr 60px;
+    }
+    .wf-label {
+      font-size: 0.8rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .wf-track {
+      background: var(--bar-bg);
+      border-radius: 3px;
+      height: 18px;
+      overflow: hidden;
+      position: relative;
+    }
+    .wf-bar {
+      border-radius: 3px;
+      height: 100%;
+      min-width: 3px;
+      transition: width 0.4s ease;
+    }
+    .wf-duration {
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      text-align: right;
+    }
+
+    /* step type colors for bars */
+    .wf-bar.t-prompt      { background: var(--clr-prompt); }
+    .wf-bar.t-completion   { background: var(--clr-completion); }
+    .wf-bar.t-tool_call    { background: var(--clr-tool); }
+    .wf-bar.t-tool_result  { background: var(--clr-tool); opacity: 0.7; }
+    .wf-bar.t-retry        { background: var(--clr-retry); }
+    .wf-bar.t-error        { background: var(--clr-error); }
+    .wf-bar.t-chain_start  { background: var(--clr-chain); }
+    .wf-bar.t-chain_end    { background: var(--clr-chain); }
+
+    /* ── Timeline steps ── */
+    .timeline { display: grid; gap: 0; }
+
+    .step {
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 0;
+    }
+    .step:last-child { border-bottom: none; }
+
+    .step-header {
+      align-items: center;
+      cursor: pointer;
+      display: flex;
+      gap: 0.6rem;
+      user-select: none;
+    }
+    .step-header:hover .step-name { color: var(--accent); }
+
+    .step-expand {
+      color: var(--text-dim);
+      flex-shrink: 0;
+      font-size: 0.7rem;
+      transition: transform var(--transition);
+      width: 1rem;
+      text-align: center;
+    }
+    .step.open .step-expand { transform: rotate(90deg); }
+
+    .step-type-badge {
+      border-radius: 3px;
+      flex-shrink: 0;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      padding: 0.15rem 0.45rem;
+    }
+    .step-type-badge.t-prompt      { background: var(--clr-prompt-bg);     color: var(--clr-prompt); }
+    .step-type-badge.t-completion   { background: var(--clr-completion-bg); color: var(--clr-completion); }
+    .step-type-badge.t-tool_call    { background: var(--clr-tool-bg);      color: var(--clr-tool); }
+    .step-type-badge.t-tool_result  { background: var(--clr-tool-bg);      color: var(--clr-tool); }
+    .step-type-badge.t-retry        { background: var(--clr-retry-bg);     color: var(--clr-retry); }
+    .step-type-badge.t-error        { background: var(--clr-error-bg);     color: var(--clr-error); }
+    .step-type-badge.t-chain_start  { background: var(--clr-chain-bg);     color: var(--clr-chain); }
+    .step-type-badge.t-chain_end    { background: var(--clr-chain-bg);     color: var(--clr-chain); }
+
+    .step-name {
+      flex: 1;
+      font-size: 0.9rem;
+      font-weight: 500;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: color var(--transition);
+      white-space: nowrap;
+    }
+
+    .step-meta {
+      color: var(--text-dim);
+      display: flex;
+      flex-shrink: 0;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      gap: 0.75rem;
+    }
+
+    .step-detail {
+      display: none;
+      margin-left: 1.6rem;
+      margin-top: 0.65rem;
+    }
+    .step.open .step-detail { display: block; }
+
+    .detail-section {
+      margin-bottom: 0.65rem;
+    }
+    .detail-section:last-child { margin-bottom: 0; }
+    .detail-label {
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+    }
+    .detail-content {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      line-height: 1.6;
+      max-height: 200px;
+      overflow: auto;
+      padding: 0.6rem 0.75rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .detail-content.is-error {
+      border-color: var(--clr-error);
+      color: var(--clr-error);
+    }
+    .detail-kv {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .detail-kv strong { color: var(--text); font-weight: 500; }
+
+    /* ── Legend ── */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .legend-item {
+      align-items: center;
+      color: var(--text-muted);
+      display: flex;
+      font-size: 0.75rem;
+      gap: 0.35rem;
+    }
+    .legend-dot {
+      border-radius: 2px;
+      display: inline-block;
+      height: 10px;
+      width: 10px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      border-top: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      text-align: center;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .wf-row { grid-template-columns: 100px 1fr 50px; }
+      .step-meta { gap: 0.4rem; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <h1>{{ trace.name or trace.id }}</h1>
+        <div class="subtitle">
+          {{ trace.source or "unknown" }} trace
+          {% set status_normalized = (trace.status or "unknown")|lower %}
+          &nbsp;
+          <span class="status-badge {{ 'success' if status_normalized in ('success', 'completed', 'ok') else ('failed' if status_normalized in ('failed', 'error') else 'unknown') }}">
+            {{ trace.status or "unknown" }}
+          </span>
+        </div>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme" title="Toggle light/dark">
+        <span class="theme-icon">&#9789;</span>
+      </button>
+    </div>
+
+    <!-- Overview metrics -->
+    <div class="card">
+      <div class="card-title">Overview</div>
+      <div class="metrics">
+        <div class="metric">
+          <span class="label">Duration</span>
+          <span class="value">{{ "%.1f"|format(stats.duration_ms / 1000) }}<small>s</small></span>
+        </div>
+        <div class="metric">
+          <span class="label">Steps</span>
+          <span class="value">{{ stats.step_count }}</span>
+        </div>
+        <div class="metric">
+          <span class="label">Tool Calls</span>
+          <span class="value">{{ stats.tool_calls }}</span>
+        </div>
+        <div class="metric">
+          <span class="label">Retries</span>
+          <span class="value">{{ stats.retries }}</span>
+        </div>
+        <div class="metric">
+          <span class="label">Tokens In</span>
+          <span class="value">{{ "{:,}".format(stats.tokens_in) }}</span>
+        </div>
+        <div class="metric">
+          <span class="label">Tokens Out</span>
+          <span class="value">{{ "{:,}".format(stats.tokens_out) }}</span>
+        </div>
+        <div class="metric">
+          <span class="label">Est. Cost</span>
+          <span class="value">
+            {% if stats.total_cost_usd is not none %}
+              ${{ "%.4f"|format(stats.total_cost_usd) }}
+            {% else %}
+              <small>n/a</small>
+            {% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Diagnostics -->
+    <div class="card">
+      <div class="card-title">
+        Diagnostics
+        {% if diagnostics %}
+          <span style="opacity:0.6; font-weight:400;">&middot; {{ diagnostics|length }}</span>
+        {% endif %}
+      </div>
+      {% if diagnostics %}
+        <div class="diagnostics-list">
+          {% for d in diagnostics %}
+            <div class="diagnostic-item sev-{{ d.severity.value }}">
+              <span class="sev-badge">{{ d.severity.value }}</span>
+              <div>
+                <div class="diagnostic-msg">{{ d.message }}</div>
+                <div class="diagnostic-rule">{{ d.rule }}{% if d.step_id %} &middot; step {{ d.step_id }}{% endif %}</div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="diagnostics-empty">No diagnostics fired for this trace.</p>
+      {% endif %}
+    </div>
+
+    <!-- Waterfall chart -->
+    {% set timed_steps = trace.steps | selectattr("duration_ms", "ne", none) | list %}
+    {% if timed_steps %}
+      {% set max_dur = timed_steps | map(attribute="duration_ms") | max %}
+      <div class="card">
+        <div class="card-title">Duration Waterfall</div>
+        <div class="legend">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--clr-prompt)"></span>prompt</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--clr-completion)"></span>completion</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--clr-tool)"></span>tool call</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--clr-retry)"></span>retry</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--clr-error)"></span>error</span>
+        </div>
+        <div class="waterfall">
+          {% for step in timed_steps %}
+            {% set pct = (step.duration_ms / max_dur * 100) if max_dur > 0 else 0 %}
+            <div class="wf-row">
+              <span class="wf-label" title="{{ step.name or step.type.value }}">{{ step.name or step.type.value }}</span>
+              <div class="wf-track">
+                <div class="wf-bar t-{{ step.type.value }}" style="width:{{ "%.1f"|format(pct) }}%"></div>
+              </div>
+              <span class="wf-duration">{{ "%.0f"|format(step.duration_ms) }}ms</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Timeline -->
+    <div class="card">
+      <div class="card-title">Timeline</div>
+      <div class="timeline">
+        {% for step in trace.steps %}
+          <div class="step" id="step-{{ step.id }}">
+            <div class="step-header" onclick="this.parentElement.classList.toggle('open')">
+              <span class="step-expand">&#9654;</span>
+              <span class="step-type-badge t-{{ step.type.value }}">{{ step.type.value }}</span>
+              <span class="step-name">{{ step.name or step.id }}</span>
+              <span class="step-meta">
+                {% if step.duration_ms is not none %}
+                  <span>{{ "%.0f"|format(step.duration_ms) }}ms</span>
+                {% endif %}
+                {% if step.tokens_in or step.tokens_out %}
+                  <span>{{ step.tokens_in or 0 }}/{{ step.tokens_out or 0 }}t</span>
+                {% endif %}
+              </span>
+            </div>
+            <div class="step-detail">
+              {% if step.model %}
+                <div class="detail-section">
+                  <div class="detail-kv"><span>Model:</span> <strong>{{ step.model }}</strong></div>
+                </div>
+              {% endif %}
+              <div class="detail-section">
+                <div class="detail-kv"><span>Timestamp:</span> <strong>{{ step.timestamp.isoformat() }}</strong></div>
+              </div>
+              {% if step.input %}
+                <div class="detail-section">
+                  <div class="detail-label">Input</div>
+                  <div class="detail-content">{{ step.input }}</div>
+                </div>
+              {% endif %}
+              {% if step.output is not none %}
+                <div class="detail-section">
+                  <div class="detail-label">Output</div>
+                  <div class="detail-content">{{ step.output or "(empty output)" }}</div>
+                </div>
+              {% endif %}
+              {% if step.error %}
+                <div class="detail-section">
+                  <div class="detail-label">Error</div>
+                  <div class="detail-content is-error">{{ step.error }}</div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      Generated by Steplight &middot; {{ trace.started_at.strftime("%Y-%m-%d") }} &middot; {{ stats.step_count }} steps
+    </div>
+  </main>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      html.setAttribute("data-theme", next);
+      document.querySelector(".theme-icon").textContent = next === "dark" ? "\u263D" : "\u2600";
+    }
+  </script>
+</body>
+</html>

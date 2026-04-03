@@ -1,0 +1,28 @@
+{
+  "id": "trace_simple_qa",
+  "name": "Simple QA",
+  "status": "success",
+  "started_at": "2025-01-15T10:30:00Z",
+  "ended_at": "2025-01-15T10:30:02Z",
+  "steps": [
+    {
+      "id": "step_prompt",
+      "type": "prompt",
+      "name": "User question",
+      "timestamp": "2025-01-15T10:30:00Z",
+      "input": "What is the AI Act?",
+      "tokens_in": 120
+    },
+    {
+      "id": "step_completion",
+      "type": "completion",
+      "name": "Assistant answer",
+      "timestamp": "2025-01-15T10:30:01Z",
+      "duration_ms": 900,
+      "output": "The AI Act is the EU regulation for artificial intelligence systems.",
+      "model": "gpt-4o-mini",
+      "tokens_in": 120,
+      "tokens_out": 54
+    }
+  ]
+}

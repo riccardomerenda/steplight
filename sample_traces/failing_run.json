@@ -1,0 +1,61 @@
+{
+  "id": "lc_failing_run",
+  "name": "Investigate customer outage",
+  "status": "success",
+  "started_at": "2025-01-17T09:00:00Z",
+  "ended_at": "2025-01-17T09:00:18Z",
+  "events": [
+    {
+      "id": "evt1",
+      "event": "on_chain_start",
+      "time": "2025-01-17T09:00:00Z",
+      "name": "agent"
+    },
+    {
+      "id": "evt2",
+      "event": "on_tool_start",
+      "time": "2025-01-17T09:00:01Z",
+      "name": "web_search",
+      "duration_ms": 6200,
+      "data": {
+        "input": "Search for outage reports."
+      }
+    },
+    {
+      "id": "evt3",
+      "event": "on_retry",
+      "time": "2025-01-17T09:00:08Z",
+      "name": "semantic_search",
+      "data": {
+        "error": "timeout"
+      }
+    },
+    {
+      "id": "evt4",
+      "event": "on_retry",
+      "time": "2025-01-17T09:00:10Z",
+      "name": "semantic_search",
+      "data": {
+        "error": "timeout"
+      }
+    },
+    {
+      "id": "evt5",
+      "event": "on_retry",
+      "time": "2025-01-17T09:00:12Z",
+      "name": "semantic_search",
+      "data": {
+        "error": "timeout"
+      }
+    },
+    {
+      "id": "evt6",
+      "event": "on_chain_error",
+      "time": "2025-01-17T09:00:16Z",
+      "name": "agent",
+      "data": {
+        "error": "search backend unavailable"
+      }
+    }
+  ]
+}

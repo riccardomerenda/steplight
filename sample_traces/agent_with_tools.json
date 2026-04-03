@@ -1,0 +1,60 @@
+{
+  "id": "run_agent_tools",
+  "name": "Find compliance gaps in policy",
+  "status": "success",
+  "created_at": "2025-01-15T10:30:00Z",
+  "completed_at": "2025-01-15T10:30:14Z",
+  "model": "gpt-4.1-mini",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "message_creation",
+      "created_at": "2025-01-15T10:30:01Z",
+      "name": "Draft plan",
+      "duration_ms": 1200,
+      "output": "I will inspect the policy, search for obligations, then summarize gaps.",
+      "usage": {
+        "prompt_tokens": 820,
+        "completion_tokens": 130
+      }
+    },
+    {
+      "type": "tool_calls",
+      "created_at": "2025-01-15T10:30:03Z",
+      "duration_ms": 9600,
+      "tool_calls": [
+        {
+          "function": {
+            "name": "web_search",
+            "arguments": "{\"q\": \"EU AI Act compliance checklist\"}"
+          }
+        }
+      ]
+    },
+    {
+      "type": "tool_calls",
+      "created_at": "2025-01-15T10:30:10Z",
+      "duration_ms": 1200,
+      "tool_calls": [
+        {
+          "function": {
+            "name": "semantic_search",
+            "arguments": "{\"doc\": \"policy.md\", \"query\": \"incident logging\"}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "type": "message_creation",
+      "created_at": "2025-01-15T10:30:12Z",
+      "name": "Final answer",
+      "duration_ms": 1500,
+      "output": "Missing incident logging, risk review, and escalation ownership.",
+      "usage": {
+        "prompt_tokens": 3410,
+        "completion_tokens": 540
+      }
+    }
+  ]
+}
