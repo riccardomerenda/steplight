@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0](https://github.com/riccardomerenda/steplight/compare/steplight-v0.1.0...steplight-v0.2.0) (2026-04-03)
+
+
+### Features
+
+* **tui:** improve inspect view with colors, scrolling, and command palette ([c6ee2d1](https://github.com/riccardomerenda/steplight/commit/c6ee2d17440d92a1b3d85e9b731ce266277b1f00))
+
 ## [0.1.0] - 2026-04-03
 
 ### Added
