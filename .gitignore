@@ -3,6 +3,8 @@ __pycache__/
 .ruff_cache/
 pytest-cache-files-*/
 .tmp-pip/
+.tmp-build/
+profile-readme/
 *.pyc
 *.pyo
 *.pyd

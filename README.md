@@ -100,6 +100,12 @@ mapping:
 - `slt export <file> -o report.html` creates a static HTML report
 - `slt validate <file>` checks whether a trace can be parsed successfully
 
+## Docs
+
+- [Roadmap](docs/ROADMAP.md)
+- [Versioning and Releases](docs/VERSIONING.md)
+- [Release Process](RELEASING.md)
+
 ## Repository Layout
 
 ```text
