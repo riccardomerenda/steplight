@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+from rich.text import Text
 from textual.widgets import Static
 
-from steplight.core.models import Diagnostic
+from steplight.core.models import Diagnostic, Severity
+
+_SEVERITY_STYLES: dict[Severity, str] = {
+    Severity.INFO: "bold dodger_blue2",
+    Severity.WARNING: "bold dark_orange",
+    Severity.ERROR: "bold red",
+}
 
 
 class DiagnosticsPanel(Static):
@@ -11,7 +18,12 @@ class DiagnosticsPanel(Static):
             self.update("Diagnostics\n\nNo diagnostics fired for this trace.")
             return
 
-        lines = ["Diagnostics", ""]
-        for diagnostic in diagnostics:
-            lines.append(f"[{diagnostic.severity.value}] {diagnostic.message}")
-        self.update("\n".join(lines))
+        output = Text()
+        output.append("Diagnostics\n\n", style="bold")
+        for i, diagnostic in enumerate(diagnostics):
+            style = _SEVERITY_STYLES.get(diagnostic.severity, "")
+            output.append(f"  {diagnostic.severity.value:<8}", style=style)
+            output.append(f" {diagnostic.message}", style="#1f1c19")
+            if i < len(diagnostics) - 1:
+                output.append("\n")
+        self.update(output)

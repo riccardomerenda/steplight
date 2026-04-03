@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from textual.app import App, ComposeResult
-from textual.containers import Horizontal, Vertical
+from textual.containers import Horizontal
 from textual.widgets import Footer, Header, Static
 
 from steplight.core.models import Diagnostic, Trace
 from steplight.core.stats import compute_trace_stats
+from steplight.tui.commands import StepCommands
 from steplight.tui.detail_panel import DetailPanel
 from steplight.tui.diagnostics import DiagnosticsPanel
 from steplight.tui.timeline import StepListItem, TimelineList
@@ -34,6 +35,7 @@ class SteplightApp(App[None]):
         border: round #b89d82;
         padding: 1;
         background: #fffdf8;
+        color: #1f1c19;
     }
 
     #diagnostics {
@@ -50,7 +52,9 @@ class SteplightApp(App[None]):
     }
     """
 
+    COMMANDS = {StepCommands}
     BINDINGS = [("q", "quit", "Quit")]
+    COMMAND_PALETTE_BINDING = "f1"
 
     def __init__(self, trace: Trace, diagnostics: list[Diagnostic]) -> None:
         super().__init__()
@@ -59,18 +63,18 @@ class SteplightApp(App[None]):
 
     def compose(self) -> ComposeResult:
         stats = compute_trace_stats(self.trace)
+        cost_part = f" | ${stats.total_cost_usd:.4f}" if stats.total_cost_usd is not None else ""
         yield Header(show_clock=True)
         yield Static(
             (
                 f"{self.trace.name or self.trace.id} | source={self.trace.source or 'unknown'} | "
-                f"{stats.step_count} steps | {stats.duration_ms / 1000:.2f}s"
+                f"{stats.step_count} steps | {stats.duration_ms / 1000:.2f}s{cost_part}"
             ),
             id="summary",
         )
         with Horizontal(id="main"):
             yield TimelineList(id="timeline")
-            with Vertical(id="detail"):
-                yield DetailPanel()
+            yield DetailPanel(id="detail")
         yield DiagnosticsPanel(id="diagnostics")
         yield Footer()
 
