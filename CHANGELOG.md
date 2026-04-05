@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0](https://github.com/riccardomerenda/steplight/compare/steplight-v0.2.0...steplight-v0.3.0) (2026-04-05)
+
+
+### Features
+
+* **cli:** add trace diff command and structured roadmap ([a2a23eb](https://github.com/riccardomerenda/steplight/commit/a2a23eb6b54d8c813025be9fce0a1bd727005b87))
+
 ## [0.2.0](https://github.com/riccardomerenda/steplight/compare/steplight-v0.1.0...steplight-v0.2.0) (2026-04-03)
 
 
