@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1](https://github.com/riccardomerenda/steplight/compare/steplight-v0.3.0...steplight-v0.3.1) (2026-04-05)
+
+
+### Documentation
+
+* update README and RELEASING for diff command and automated releases ([1f69c21](https://github.com/riccardomerenda/steplight/commit/1f69c210e81d67984a8134bc44ffa80fc7dbe080))
+
 ## [0.3.0](https://github.com/riccardomerenda/steplight/compare/steplight-v0.2.0...steplight-v0.3.0) (2026-04-05)
 
 
