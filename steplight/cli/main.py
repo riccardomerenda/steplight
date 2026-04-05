@@ -11,6 +11,7 @@ from rich.text import Text
 
 from steplight.cli.config import RuntimeConfig, discover_generic_config
 from steplight.core.analyzer import AnalyzerConfig, analyze_trace
+from steplight.core.diff import Delta, TraceDiff, compare_traces
 from steplight.core.parser import SUPPORTED_SOURCES, parse_trace_file
 from steplight.core.stats import compute_trace_stats, find_bottleneck
 from steplight.export.html import export_trace_html
@@ -154,6 +155,92 @@ def validate(
     console.print(
         f"Valid trace: {trace.id} ({len(trace.steps)} steps, source={trace.source or runtime_config.source or 'unknown'})"
     )
+
+
+@app.command()
+def diff(
+    base: Annotated[Path, typer.Argument(exists=True, readable=True, resolve_path=True, help="Base (before) trace file.")],
+    head: Annotated[Path, typer.Argument(exists=True, readable=True, resolve_path=True, help="Head (after) trace file.")],
+    source: Annotated[str | None, typer.Option(help="Force a parser source.")] = None,
+    config: Annotated[Path | None, typer.Option(help="Optional steplight.yaml mapping file.")] = None,
+) -> None:
+    """Compare two traces side-by-side."""
+
+    base_rc = _runtime_config(base, source, config, 0.10)
+    head_rc = _runtime_config(head, source, config, 0.10)
+    base_trace = _load_trace(base, base_rc)
+    head_trace = _load_trace(head, head_rc)
+    result = compare_traces(base_trace, head_trace)
+    _print_diff(result)
+
+
+def _print_diff(d: TraceDiff) -> None:
+    from rich.table import Table
+
+    console.print()
+    console.print(f"[bold]Comparing:[/bold] {d.base_name}  [dim]->[/dim]  {d.head_name}")
+    console.print()
+
+    table = Table(title="Stats", expand=False, show_edge=False, pad_edge=False)
+    table.add_column("Metric", style="bold")
+    table.add_column("Base", justify="right")
+    table.add_column("Head", justify="right")
+    table.add_column("Change", justify="right")
+
+    _WORSE_IF_HIGHER = {"Retries", "Cost", "Tokens in", "Tokens out", "Duration"}
+
+    def _add_row(label: str, delta: Delta, fmt: str = ".0f", suffix: str = "", prefix: str = "") -> None:
+        change_val = delta.absolute
+        pct = delta.percent
+        if change_val == 0:
+            style = "dim"
+            sign = ""
+        elif change_val > 0:
+            style = "red" if label in _WORSE_IF_HIGHER else "green"
+            sign = "+"
+        else:
+            style = "green" if label in _WORSE_IF_HIGHER else "red"
+            sign = ""
+        pct_str = f" ({sign}{pct:.1f}%)" if pct is not None else ""
+        table.add_row(
+            label,
+            f"{prefix}{delta.old:{fmt}}{suffix}",
+            f"{prefix}{delta.new:{fmt}}{suffix}",
+            Text(f"{sign}{prefix}{abs(change_val):{fmt}}{suffix}{pct_str}" if change_val != 0 else "0", style=style),
+        )
+
+    _add_row("Duration", Delta(d.duration.old / 1000, d.duration.new / 1000), ".2f", suffix="s")
+    _add_row("Steps", d.step_count, ".0f")
+    _add_row("Tool calls", d.tool_calls, ".0f")
+    _add_row("Retries", d.retries, ".0f")
+    _add_row("Tokens in", d.tokens_in, ",.0f")
+    _add_row("Tokens out", d.tokens_out, ",.0f")
+    if d.cost is not None:
+        _add_row("Cost", d.cost, ".4f", prefix="$")
+
+    console.print(table)
+
+    if d.step_type_deltas:
+        console.print()
+        console.print("[bold]Step type changes[/bold]")
+        for st in d.step_type_deltas:
+            diff_val = st.new_count - st.old_count
+            sign = "+" if diff_val > 0 else ""
+            style = "green" if diff_val > 0 else "red"
+            console.print(f"  {st.step_type.value:<14} {st.old_count} -> {st.new_count}  [{style}]{sign}{diff_val}[/{style}]")
+
+    if d.base_only_steps or d.head_only_steps:
+        console.print()
+        if d.base_only_steps:
+            console.print("[bold]Steps only in base:[/bold]")
+            for name in d.base_only_steps:
+                console.print(f"  [red]- {name}[/red]")
+        if d.head_only_steps:
+            console.print("[bold]Steps only in head:[/bold]")
+            for name in d.head_only_steps:
+                console.print(f"  [green]+ {name}[/green]")
+
+    console.print()
 
 
 def _format_cost(value: float | None) -> str:
