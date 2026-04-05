@@ -8,16 +8,16 @@ pytest
 python -m build
 ```
 
-## Release checklist
+## Automated release flow
 
-1. Confirm `README.md`, `CHANGELOG.md`, `LICENSE`, and `pyproject.toml` are up to date.
-2. Review sample traces and screenshots or reports used in documentation.
-3. Build a fresh wheel and source distribution with `python -m build`.
-4. Smoke-test the CLI from the built package in a clean environment.
-5. Bump the version in `pyproject.toml` and `steplight/__init__.py`.
-6. Create an annotated tag such as `v0.1.0`.
-7. Create a GitHub Release from that tag.
-8. Publish to PyPI when ready.
+Releases are fully automated via GitHub Actions. No manual version bumps, tags, or PyPI uploads required.
+
+1. Push to `main` using conventional commit messages (`feat:`, `fix:`, `chore:`, etc.).
+2. CI runs tests on Python 3.11, 3.12, and 3.13.
+3. Release Please creates or updates a release PR with version bump and changelog.
+4. The release PR auto-merges once CI passes.
+5. A GitHub Release is created from the merged PR.
+6. The publish workflow builds the package and uploads it to PyPI via trusted publishing.
 
 ## Initial public tag
 
@@ -32,15 +32,12 @@ gh release create v0.1.0 --generate-notes --title "Steplight v0.1.0"
 
 ## Ongoing releases with Release Please
 
-Steplight is configured with `release-please` for ongoing version bumps, changelog updates, tags, and GitHub Releases.
-
-Recommended flow after `v0.1.0`:
+Steplight is configured with `release-please` for ongoing version bumps, changelog updates, tags, and GitHub Releases. Release PRs are auto-merged after CI passes.
 
 1. Merge changes to `main` using Conventional Commit titles such as `feat:` and `fix:`.
-2. Let the `release-please` workflow open or update the release PR.
-3. Review the generated changelog and version bumps in that PR.
-4. Merge the release PR when you want to publish the next version.
-5. Publish to PyPI from the tagged release when ready.
+2. The `release-please` workflow opens or updates the release PR automatically.
+3. The release PR auto-merges once CI passes, creating a GitHub Release.
+4. The publish workflow uploads the package to PyPI.
 
 If you want CI to run on release PRs created by the workflow, add a `RELEASE_PLEASE_TOKEN` repository secret backed by a fine-scoped GitHub token. Without it, GitHub's default token can still open release PRs and create releases, but those PRs will not trigger other workflows.
 
@@ -81,7 +78,6 @@ gh release create v0.1.0 --generate-notes
 - Use minor releases for new adapters, diagnostics, or notable UX additions
 - Call out breaking changes clearly while Steplight is still in `0.x`
 
-## Suggested first public release
+## Manual override
 
-- Keep the package version at `0.1.0` if you want to signal MVP/alpha status.
-- Prefer a short changelog entry summarizing supported formats, diagnostics, and export features.
+If you need to publish a specific ref manually, trigger the `Publish to PyPI` workflow from the Actions tab with the desired git ref (e.g., `v0.2.0` or `main`).
