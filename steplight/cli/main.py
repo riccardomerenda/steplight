@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json as json_mod
+from enum import Enum
 from pathlib import Path
 from typing import Annotated
 
@@ -12,9 +14,15 @@ from rich.text import Text
 from steplight.cli.config import RuntimeConfig, discover_generic_config
 from steplight.core.analyzer import AnalyzerConfig, analyze_trace
 from steplight.core.diff import Delta, TraceDiff, compare_traces
+from steplight.core.models import Severity
 from steplight.core.parser import SUPPORTED_SOURCES, parse_trace_file
 from steplight.core.stats import compute_trace_stats, find_bottleneck
 from steplight.export.html import export_trace_html
+
+
+class OutputFormat(str, Enum):
+    RICH = "rich"
+    JSON = "json"
 
 app = typer.Typer(
     help="Local-first trace inspector for LLM agents and tool-driven workflows.",
@@ -81,8 +89,17 @@ def summary(
     source: Annotated[str | None, typer.Option(help="Force a parser source.")] = None,
     config: Annotated[Path | None, typer.Option(help="Optional steplight.yaml mapping file.")] = None,
     high_cost_threshold_usd: Annotated[float, typer.Option(help="High-cost diagnostic threshold in USD.")] = 0.10,
+    format: Annotated[OutputFormat, typer.Option("--format", "-f", help="Output format: rich (default) or json.")] = OutputFormat.RICH,
+    fail_on: Annotated[str | None, typer.Option(help="Exit with code 1 if any diagnostic meets or exceeds this severity (info, warning, error).")] = None,
 ) -> None:
     """Print a non-interactive summary."""
+
+    if fail_on is not None:
+        try:
+            fail_severity = Severity(fail_on.lower())
+        except ValueError:
+            console.print(f"[red]Error:[/red] Invalid severity '{fail_on}'. Use: info, warning, or error.")
+            raise typer.Exit(code=2)
 
     runtime_config = _runtime_config(file, source, config, high_cost_threshold_usd)
     trace = _load_trace(file, runtime_config)
@@ -90,6 +107,19 @@ def summary(
     diagnostics = analyze_trace(trace, _diagnostics_config(runtime_config))
     bottleneck = find_bottleneck(trace)
 
+    if format == OutputFormat.JSON:
+        _print_summary_json(trace, stats, diagnostics, bottleneck)
+    else:
+        _print_summary_rich(trace, stats, diagnostics, bottleneck)
+
+    if fail_on is not None:
+        _severity_rank = {Severity.INFO: 0, Severity.WARNING: 1, Severity.ERROR: 2}
+        threshold = _severity_rank[fail_severity]
+        if any(_severity_rank[d.severity] >= threshold for d in diagnostics):
+            raise typer.Exit(code=1)
+
+
+def _print_summary_rich(trace, stats, diagnostics, bottleneck) -> None:
     lines = [
         f"[bold]Run:[/bold] {trace.name or trace.id}",
         f"[bold]Source:[/bold] {trace.source or 'unknown'}",
@@ -124,6 +154,39 @@ def summary(
 
     for line in highlights:
         console.print(line)
+
+
+def _print_summary_json(trace, stats, diagnostics, bottleneck) -> None:
+    data: dict = {
+        "trace_id": trace.id,
+        "name": trace.name,
+        "source": trace.source or "unknown",
+        "stats": {
+            "duration_s": round(stats.duration_ms / 1000, 3),
+            "step_count": stats.step_count,
+            "tool_calls": stats.tool_calls,
+            "retries": stats.retries,
+            "tokens_in": stats.tokens_in,
+            "tokens_out": stats.tokens_out,
+            "cost_usd": stats.total_cost_usd,
+        },
+        "diagnostics": [
+            {
+                "rule": d.rule,
+                "severity": d.severity.value,
+                "message": d.message,
+                "step_id": d.step_id,
+            }
+            for d in diagnostics
+        ],
+    }
+    if bottleneck and bottleneck.percentage > 0.5:
+        data["bottleneck"] = {
+            "step_id": bottleneck.step_id,
+            "name": bottleneck.name,
+            "percentage": round(bottleneck.percentage * 100, 1),
+        }
+    print(json_mod.dumps(data, indent=2))
 
 
 @app.command()

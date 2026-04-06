@@ -20,7 +20,8 @@ It is designed for developers building with OpenAI-style workflows, LangChain, M
 
 - Interactive Textual inspector with color-coded timeline, scrollable details, and command palette (F1)
 - Trace comparison (`slt diff`) to spot regressions in duration, tokens, cost, and step composition
-- Rich terminal summary for quick debugging and CI-friendly output
+- Rich terminal summary with JSON output (`--format json`) for CI pipelines
+- Non-zero exit codes on diagnostic thresholds (`--fail-on warning`)
 - Static HTML export for sharing a run with other people
 - Built-in diagnostics for common agent failure patterns (bottlenecks, retry loops, cost spikes, context growth, and more)
 - Support for OpenAI-style traces, LangChain callbacks, MCP logs, and generic JSON/YAML
@@ -38,6 +39,8 @@ The package installs both `steplight` and the shorter `slt` alias. The examples 
 
 ```bash
 slt summary sample_traces/agent_with_tools.json
+slt summary sample_traces/agent_with_tools.json --format json
+slt summary sample_traces/agent_with_tools.json --fail-on warning
 slt diff sample_traces/agent_with_tools.json sample_traces/expensive_run.json
 slt validate sample_traces/simple_qa.json
 slt export sample_traces/expensive_run.json -o report.html
@@ -120,6 +123,8 @@ mapping:
 
 - `slt inspect <file>` opens the interactive Textual UI
 - `slt summary <file>` prints a non-interactive terminal summary
+- `slt summary <file> --format json` outputs machine-readable JSON
+- `slt summary <file> --fail-on warning` exits with code 1 if diagnostics fire
 - `slt diff <base> <head>` compares two traces side-by-side
 - `slt export <file> -o report.html` creates a static HTML report
 - `slt validate <file>` checks whether a trace can be parsed successfully

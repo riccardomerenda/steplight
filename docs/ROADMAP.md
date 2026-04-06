@@ -101,8 +101,8 @@ Status legend: **done** | **in-progress** | **planned** | **future**
 | done | GitHub Actions CI (3.11, 3.12, 3.13) |
 | done | Trusted PyPI publishing |
 | done | Release Please with auto-merge |
-| planned | `slt summary --format json` for CI consumption |
-| planned | Non-zero exit code when diagnostics exceed threshold |
+| done | `slt summary --format json` for CI consumption |
+| done | Non-zero exit code when diagnostics exceed threshold (`--fail-on`) |
 | future | JUnit XML output for test runners |
 | future | GitHub Actions action for trace analysis |
 

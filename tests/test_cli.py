@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from typer.testing import CliRunner
@@ -49,3 +50,79 @@ def test_validate_command_reports_parse_errors_cleanly() -> None:
         assert "Error:" in result.stdout
     finally:
         invalid_trace.unlink(missing_ok=True)
+
+
+# --format json tests
+
+
+def test_summary_format_json() -> None:
+    result = runner.invoke(
+        app, ["summary", str(ROOT / "sample_traces" / "agent_with_tools.json"), "--format", "json"],
+    )
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert "trace_id" in data
+    assert "stats" in data
+    assert data["stats"]["step_count"] > 0
+    assert isinstance(data["diagnostics"], list)
+
+
+def test_summary_format_json_includes_cost() -> None:
+    result = runner.invoke(
+        app, ["summary", str(ROOT / "sample_traces" / "expensive_run.json"), "--format", "json"],
+    )
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["stats"]["cost_usd"] is not None
+
+
+def test_summary_format_json_includes_bottleneck() -> None:
+    result = runner.invoke(
+        app, ["summary", str(ROOT / "sample_traces" / "agent_with_tools.json"), "--format", "json"],
+    )
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    # This trace has a bottleneck (web_search > 50%)
+    if "bottleneck" in data:
+        assert "name" in data["bottleneck"]
+        assert "percentage" in data["bottleneck"]
+
+
+# --fail-on tests
+
+
+def test_summary_fail_on_warning_exits_nonzero() -> None:
+    """The expensive_run trace triggers high-cost warning, so --fail-on warning should exit 1."""
+    result = runner.invoke(
+        app, ["summary", str(ROOT / "sample_traces" / "expensive_run.json"), "--fail-on", "warning"],
+    )
+    assert result.exit_code == 1
+
+
+def test_summary_fail_on_error_exits_zero_when_no_errors() -> None:
+    """agent_with_tools has warnings but no errors, so --fail-on error should exit 0."""
+    result = runner.invoke(
+        app, ["summary", str(ROOT / "sample_traces" / "agent_with_tools.json"), "--fail-on", "error"],
+    )
+    assert result.exit_code == 0
+
+
+def test_summary_fail_on_invalid_severity() -> None:
+    result = runner.invoke(
+        app, ["summary", str(ROOT / "sample_traces" / "agent_with_tools.json"), "--fail-on", "critical"],
+    )
+    assert result.exit_code == 2
+
+
+def test_summary_fail_on_with_json_format() -> None:
+    """--fail-on and --format json work together."""
+    result = runner.invoke(
+        app, [
+            "summary", str(ROOT / "sample_traces" / "expensive_run.json"),
+            "--format", "json", "--fail-on", "warning",
+        ],
+    )
+    assert result.exit_code == 1
+    # JSON output should still be valid even when exit code is non-zero
+    data = json.loads(result.output)
+    assert len(data["diagnostics"]) > 0
