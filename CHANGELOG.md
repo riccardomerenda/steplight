@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0](https://github.com/riccardomerenda/steplight/compare/steplight-v0.3.1...steplight-v0.4.0) (2026-04-06)
+
+
+### Features
+
+* **cli:** add JSON output and --fail-on exit codes to slt summary ([66a92ed](https://github.com/riccardomerenda/steplight/commit/66a92ed25f95203a25300fde7bf98fee9a88bd40))
+
 ## [0.3.1](https://github.com/riccardomerenda/steplight/compare/steplight-v0.3.0...steplight-v0.3.1) (2026-04-05)
 
 
