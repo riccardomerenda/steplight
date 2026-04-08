@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0](https://github.com/riccardomerenda/steplight/compare/steplight-v0.4.0...steplight-v0.5.0) (2026-04-08)
+
+
+### Features
+
+* **adapters:** add Anthropic Messages API adapter ([9254ef8](https://github.com/riccardomerenda/steplight/commit/9254ef89ada9390fece9a65ef04fb0b6dc28a5ec))
+
 ## [0.4.0](https://github.com/riccardomerenda/steplight/compare/steplight-v0.3.1...steplight-v0.4.0) (2026-04-06)
 
 
