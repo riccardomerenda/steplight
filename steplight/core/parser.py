@@ -6,6 +6,7 @@ from typing import Any
 
 import yaml
 
+from steplight.adapters.anthropic import parse_anthropic_trace
 from steplight.adapters.generic import load_mapping, parse_generic_trace
 from steplight.adapters.langchain import parse_langchain_trace
 from steplight.adapters.mcp import parse_mcp_trace
@@ -13,7 +14,7 @@ from steplight.adapters.openai import parse_openai_trace
 from steplight.core.models import Trace
 
 
-SUPPORTED_SOURCES = {"openai", "langchain", "mcp", "generic"}
+SUPPORTED_SOURCES = {"openai", "anthropic", "langchain", "mcp", "generic"}
 
 
 def parse_trace_file(path: Path, source: str | None = None, config_path: Path | None = None) -> Trace:
@@ -22,6 +23,8 @@ def parse_trace_file(path: Path, source: str | None = None, config_path: Path | 
 
     if selected_source == "openai":
         return parse_openai_trace(payload)
+    if selected_source == "anthropic":
+        return parse_anthropic_trace(payload)
     if selected_source == "langchain":
         return parse_langchain_trace(payload)
     if selected_source == "mcp":
@@ -52,6 +55,11 @@ def detect_source(payload: dict[str, Any], config_path: Path | None = None) -> s
     if config_path:
         return "generic"
 
+    messages = payload.get("messages")
+    if isinstance(messages, list) and messages:
+        if _looks_like_anthropic(messages, payload):
+            return "anthropic"
+
     steps = payload.get("steps")
     if isinstance(steps, list) and steps:
         step_types = {str(step.get("type", "")).lower() for step in steps if isinstance(step, dict)}
@@ -73,7 +81,28 @@ def detect_source(payload: dict[str, Any], config_path: Path | None = None) -> s
     if payload.get("entries"):
         return "mcp"
 
-    if steps or events:
+    if steps or events or messages:
         return "generic"
 
     raise ValueError("Could not detect trace source. Pass --source explicitly or provide a steplight.yaml mapping.")
+
+
+def _looks_like_anthropic(messages: list, payload: dict[str, Any]) -> bool:
+    """Detect Anthropic-shaped conversation traces.
+
+    Heuristics: a Claude model name, or content blocks using Anthropic's
+    type discriminators (text / tool_use / tool_result).
+    """
+    model = str(payload.get("model") or "").lower()
+    if "claude" in model:
+        return True
+    for message in messages:
+        if not isinstance(message, dict):
+            continue
+        content = message.get("content")
+        if not isinstance(content, list):
+            continue
+        for block in content:
+            if isinstance(block, dict) and block.get("type") in {"tool_use", "tool_result"}:
+                return True
+    return False

@@ -11,6 +11,16 @@ MODEL_PRICING_PER_MILLION = {
     "gpt-4o": (2.50, 10.00),
     "gpt-4o-mini": (0.15, 0.60),
     "o4-mini": (1.10, 4.40),
+    "claude-opus-4-5": (15.00, 75.00),
+    "claude-opus-4-6": (15.00, 75.00),
+    "claude-sonnet-4-5": (3.00, 15.00),
+    "claude-sonnet-4-6": (3.00, 15.00),
+    "claude-haiku-4-5": (1.00, 5.00),
+    "claude-3-5-sonnet": (3.00, 15.00),
+    "claude-3-5-haiku": (0.80, 4.00),
+    "claude-3-opus": (15.00, 75.00),
+    "claude-3-sonnet": (3.00, 15.00),
+    "claude-3-haiku": (0.25, 1.25),
 }
 
 

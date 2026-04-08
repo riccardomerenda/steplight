@@ -13,10 +13,10 @@ Status legend: **done** | **in-progress** | **planned** | **future**
 | Status | Feature |
 |--------|---------|
 | done | OpenAI responses adapter |
+| done | Anthropic Messages API adapter |
 | done | LangChain callback adapter |
 | done | MCP log adapter |
 | done | Generic YAML/JSON mapping adapter |
-| planned | Anthropic SDK adapter |
 | planned | Expand OpenAI support for more response shapes |
 | planned | Improve LangChain coverage for more callback variants |
 | planned | More real-world MCP log patterns and edge cases |

@@ -24,7 +24,7 @@ It is designed for developers building with OpenAI-style workflows, LangChain, M
 - Non-zero exit codes on diagnostic thresholds (`--fail-on warning`)
 - Static HTML export for sharing a run with other people
 - Built-in diagnostics for common agent failure patterns (bottlenecks, retry loops, cost spikes, context growth, and more)
-- Support for OpenAI-style traces, LangChain callbacks, MCP logs, and generic JSON/YAML
+- Support for OpenAI-style traces, Anthropic Messages API, LangChain callbacks, MCP logs, and generic JSON/YAML
 - Extensible adapters and rules so you can grow it with your workflow
 
 ## Install
@@ -88,6 +88,7 @@ Step type changes
 ## Supported Trace Formats
 
 - OpenAI-style step traces
+- Anthropic Messages API conversation traces (text + tool_use + tool_result blocks)
 - LangChain callback event exports
 - MCP tool call logs
 - Generic JSON or YAML with an optional `steplight.yaml` mapping file
