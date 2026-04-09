@@ -4,13 +4,14 @@ from collections import Counter
 from dataclasses import dataclass
 
 from steplight.core.models import Diagnostic, Severity, Step, StepType, Trace
-from steplight.core.stats import compute_trace_stats, trace_duration_ms
+from steplight.core.stats import compute_tool_breakdown, compute_trace_stats, trace_duration_ms
 
 
 @dataclass(slots=True)
 class AnalyzerConfig:
     high_cost_threshold_usd: float = 0.10
     slow_tool_threshold_ms: float = 5000.0
+    tool_concentration_threshold: float = 0.7
 
 
 class Rule:
@@ -184,6 +185,35 @@ class HighCostRule(Rule):
         ]
 
 
+class ToolConcentrationRule(Rule):
+    name = "tool_concentration"
+
+    def evaluate(self, trace: Trace, config: AnalyzerConfig) -> list[Diagnostic]:
+        breakdown = compute_tool_breakdown(trace)
+        if len(breakdown) < 2:
+            return []
+        total_tool_ms = sum(t.total_duration_ms for t in breakdown)
+        if total_tool_ms <= 0:
+            return []
+        top = breakdown[0]
+        share = top.total_duration_ms / total_tool_ms
+        if share < config.tool_concentration_threshold:
+            return []
+        pct = round(share * 100, 1)
+        call_word = "call" if top.count == 1 else "calls"
+        return [
+            Diagnostic(
+                rule=self.name,
+                severity=Severity.WARNING,
+                message=(
+                    f"Tool '{top.name}' drives {pct}% of total tool runtime "
+                    f"({top.count} {call_word}, {top.total_duration_ms / 1000:.1f}s)."
+                ),
+                metadata={"tool": top.name, "share": share, "calls": top.count},
+            )
+        ]
+
+
 class EmptyOutputRule(Rule):
     name = "empty_output"
 
@@ -207,6 +237,7 @@ DEFAULT_RULES: tuple[Rule, ...] = (
     RetryLoopRule(),
     ContextGrowthRule(),
     ToolAbuseRule(),
+    ToolConcentrationRule(),
     SilentErrorRule(),
     SlowToolRule(),
     HighCostRule(),

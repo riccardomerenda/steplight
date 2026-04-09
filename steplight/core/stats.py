@@ -31,6 +31,15 @@ class StepShare:
     percentage: float
 
 
+@dataclass(slots=True)
+class ToolStats:
+    name: str
+    count: int
+    total_duration_ms: float
+    avg_duration_ms: float
+    pct_of_runtime: float
+
+
 def compute_trace_stats(trace: Trace) -> TraceStats:
     tokens_in = sum(step.tokens_in or 0 for step in trace.steps)
     tokens_out = sum(step.tokens_out or 0 for step in trace.steps)
@@ -85,6 +94,43 @@ def estimate_trace_cost(trace: Trace) -> float | None:
     if not priced_steps:
         return None
     return round(total, 6)
+
+
+def compute_tool_breakdown(trace: Trace) -> list[ToolStats]:
+    """Aggregate per-tool counts and durations across all tool_call steps.
+
+    Returned entries are sorted by total_duration_ms descending so the
+    most expensive tools surface first. pct_of_runtime is computed against
+    the trace's total wall-clock duration.
+    """
+    total_runtime_ms = trace_duration_ms(trace)
+
+    counts: dict[str, int] = {}
+    durations: dict[str, float] = {}
+
+    for step in trace.steps:
+        if step.type != StepType.TOOL_CALL:
+            continue
+        name = step.name or "tool"
+        counts[name] = counts.get(name, 0) + 1
+        durations[name] = durations.get(name, 0.0) + (step.duration_ms or 0.0)
+
+    breakdown: list[ToolStats] = []
+    for name, count in counts.items():
+        total_dur = durations[name]
+        pct = (total_dur / total_runtime_ms * 100) if total_runtime_ms > 0 else 0.0
+        breakdown.append(
+            ToolStats(
+                name=name,
+                count=count,
+                total_duration_ms=total_dur,
+                avg_duration_ms=total_dur / count if count else 0.0,
+                pct_of_runtime=pct,
+            )
+        )
+
+    breakdown.sort(key=lambda t: t.total_duration_ms, reverse=True)
+    return breakdown
 
 
 def find_bottleneck(trace: Trace) -> StepShare | None:

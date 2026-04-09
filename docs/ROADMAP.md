@@ -32,9 +32,10 @@ Status legend: **done** | **in-progress** | **planned** | **future**
 | done | `slt export` — static HTML report |
 | done | `slt validate` — verify trace is parseable |
 | done | `slt diff` — compare two traces side-by-side |
+| done | CI-friendly output (`--format json` + `--fail-on` exit codes) |
 | planned | `slt summary` batch mode (multiple files) |
 | planned | JSON / CSV export formats |
-| planned | CI-friendly output (JSON/JUnit + exit codes) |
+| planned | JUnit XML output for test runners |
 | future | `slt watch` — re-run on file change |
 
 ### Diagnostics & analysis
@@ -49,10 +50,11 @@ Status legend: **done** | **in-progress** | **planned** | **future**
 | done | Slow tool warning (> 5s) |
 | done | High cost warning |
 | done | Empty output detection |
+| done | Tool concentration warning (single tool dominates runtime) |
+| done | Per-tool runtime breakdown in `slt summary` |
 | planned | Richer timing diagnostics (stalled / imbalanced runs) |
 | planned | Context-window pressure warnings |
 | planned | Stronger silent-failure detection |
-| planned | Cost / token breakdown by tool |
 | future | Run-to-run comparison analysis |
 | future | Trend analysis across many runs |
 | future | Anomaly / outlier detection |
@@ -103,7 +105,6 @@ Status legend: **done** | **in-progress** | **planned** | **future**
 | done | Release Please with auto-merge |
 | done | `slt summary --format json` for CI consumption |
 | done | Non-zero exit code when diagnostics exceed threshold (`--fail-on`) |
-| future | JUnit XML output for test runners |
 | future | GitHub Actions action for trace analysis |
 
 ---

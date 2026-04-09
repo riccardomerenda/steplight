@@ -16,7 +16,7 @@ from steplight.core.analyzer import AnalyzerConfig, analyze_trace
 from steplight.core.diff import Delta, TraceDiff, compare_traces
 from steplight.core.models import Severity
 from steplight.core.parser import SUPPORTED_SOURCES, parse_trace_file
-from steplight.core.stats import compute_trace_stats, find_bottleneck
+from steplight.core.stats import compute_tool_breakdown, compute_trace_stats, find_bottleneck
 from steplight.export.html import export_trace_html
 
 
@@ -106,11 +106,12 @@ def summary(
     stats = compute_trace_stats(trace)
     diagnostics = analyze_trace(trace, _diagnostics_config(runtime_config))
     bottleneck = find_bottleneck(trace)
+    tool_breakdown = compute_tool_breakdown(trace)
 
     if format == OutputFormat.JSON:
-        _print_summary_json(trace, stats, diagnostics, bottleneck)
+        _print_summary_json(trace, stats, diagnostics, bottleneck, tool_breakdown)
     else:
-        _print_summary_rich(trace, stats, diagnostics, bottleneck)
+        _print_summary_rich(trace, stats, diagnostics, bottleneck, tool_breakdown)
 
     if fail_on is not None:
         _severity_rank = {Severity.INFO: 0, Severity.WARNING: 1, Severity.ERROR: 2}
@@ -119,7 +120,7 @@ def summary(
             raise typer.Exit(code=1)
 
 
-def _print_summary_rich(trace, stats, diagnostics, bottleneck) -> None:
+def _print_summary_rich(trace, stats, diagnostics, bottleneck, tool_breakdown) -> None:
     lines = [
         f"[bold]Run:[/bold] {trace.name or trace.id}",
         f"[bold]Source:[/bold] {trace.source or 'unknown'}",
@@ -134,6 +135,26 @@ def _print_summary_rich(trace, stats, diagnostics, bottleneck) -> None:
         ),
     ]
     console.print(Panel("\n".join(lines), title="Steplight Summary", expand=False))
+
+    if tool_breakdown:
+        from rich.table import Table
+
+        console.print()
+        table = Table(title="Tool breakdown", expand=False, show_edge=False, pad_edge=False)
+        table.add_column("Tool", style="bold")
+        table.add_column("Calls", justify="right")
+        table.add_column("Total", justify="right")
+        table.add_column("Avg", justify="right")
+        table.add_column("% runtime", justify="right")
+        for tool in tool_breakdown:
+            table.add_row(
+                tool.name,
+                str(tool.count),
+                f"{tool.total_duration_ms / 1000:.2f}s",
+                f"{tool.avg_duration_ms / 1000:.2f}s",
+                f"{tool.pct_of_runtime:.1f}%",
+            )
+        console.print(table)
 
     highlights: list[str] = []
     if bottleneck and bottleneck.percentage > 0.5:
@@ -156,7 +177,7 @@ def _print_summary_rich(trace, stats, diagnostics, bottleneck) -> None:
         console.print(line)
 
 
-def _print_summary_json(trace, stats, diagnostics, bottleneck) -> None:
+def _print_summary_json(trace, stats, diagnostics, bottleneck, tool_breakdown) -> None:
     data: dict = {
         "trace_id": trace.id,
         "name": trace.name,
@@ -178,6 +199,16 @@ def _print_summary_json(trace, stats, diagnostics, bottleneck) -> None:
                 "step_id": d.step_id,
             }
             for d in diagnostics
+        ],
+        "tool_breakdown": [
+            {
+                "name": t.name,
+                "count": t.count,
+                "total_duration_ms": round(t.total_duration_ms, 1),
+                "avg_duration_ms": round(t.avg_duration_ms, 1),
+                "pct_of_runtime": round(t.pct_of_runtime, 1),
+            }
+            for t in tool_breakdown
         ],
     }
     if bottleneck and bottleneck.percentage > 0.5:

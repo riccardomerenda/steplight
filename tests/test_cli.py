@@ -65,6 +65,12 @@ def test_summary_format_json() -> None:
     assert "stats" in data
     assert data["stats"]["step_count"] > 0
     assert isinstance(data["diagnostics"], list)
+    assert isinstance(data["tool_breakdown"], list)
+    assert len(data["tool_breakdown"]) == 2
+    # Sorted by total_duration_ms descending
+    assert data["tool_breakdown"][0]["name"] == "web_search"
+    assert data["tool_breakdown"][0]["count"] == 1
+    assert data["tool_breakdown"][0]["pct_of_runtime"] > 50
 
 
 def test_summary_format_json_includes_cost() -> None:

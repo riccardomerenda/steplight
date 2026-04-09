@@ -23,7 +23,8 @@ It is designed for developers building with OpenAI-style workflows, LangChain, M
 - Rich terminal summary with JSON output (`--format json`) for CI pipelines
 - Non-zero exit codes on diagnostic thresholds (`--fail-on warning`)
 - Static HTML export for sharing a run with other people
-- Built-in diagnostics for common agent failure patterns (bottlenecks, retry loops, cost spikes, context growth, and more)
+- Built-in diagnostics for common agent failure patterns (bottlenecks, retry loops, cost spikes, context growth, tool concentration, and more)
+- Per-tool runtime breakdown to spot which tool is burning the most time
 - Support for OpenAI-style traces, Anthropic Messages API, LangChain callbacks, MCP logs, and generic JSON/YAML
 - Extensible adapters and rules so you can grow it with your workflow
 
@@ -101,6 +102,7 @@ Steplight currently flags:
 - retry loops
 - context growth
 - repeated tool calls
+- tool concentration (one tool dominates runtime)
 - silent errors
 - slow tools
 - high-cost runs
