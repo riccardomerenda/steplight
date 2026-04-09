@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0](https://github.com/riccardomerenda/steplight/compare/steplight-v0.5.0...steplight-v0.6.0) (2026-04-09)
+
+
+### Features
+
+* **diagnostics:** add per-tool runtime breakdown and concentration rule ([616e7ae](https://github.com/riccardomerenda/steplight/commit/616e7aea6e4e6950f88caa48aabee8c1e4521406))
+
 ## [0.5.0](https://github.com/riccardomerenda/steplight/compare/steplight-v0.4.0...steplight-v0.5.0) (2026-04-08)
 
 
